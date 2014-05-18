@@ -64,7 +64,7 @@ module MailCatcher::Mail extend self
   end
 
   def latest_created_at
-    @latest_created_at_query ||= db.prepare "SELECT created_at FROM message ORDER BY created_at DESC LIMIT 1"
+    @latest_created_at_query = db.prepare "SELECT created_at FROM message ORDER BY created_at DESC LIMIT 1"
     @latest_created_at_query.execute.next
   end
 
@@ -78,7 +78,7 @@ module MailCatcher::Mail extend self
   end
 
   def message(id)
-    @message_query ||= db.prepare "SELECT * FROM message WHERE id = ? LIMIT 1"
+    @message_query = db.prepare "SELECT * FROM message WHERE id = ? LIMIT 1"
     row = @message_query.execute(id).next
     row && Hash[row.fields.zip(row)].tap do |message|
       message["recipients"] &&= ActiveSupport::JSON.decode message["recipients"]
@@ -86,12 +86,12 @@ module MailCatcher::Mail extend self
   end
 
   def message_has_html?(id)
-    @message_has_html_query ||= db.prepare "SELECT 1 FROM message_part WHERE message_id = ? AND is_attachment = 0 AND type IN ('application/xhtml+xml', 'text/html') LIMIT 1"
+    @message_has_html_query = db.prepare "SELECT 1 FROM message_part WHERE message_id = ? AND is_attachment = 0 AND type IN ('application/xhtml+xml', 'text/html') LIMIT 1"
     (!!@message_has_html_query.execute(id).next) || ["text/html", "application/xhtml+xml"].include?(message(id)["type"])
   end
 
   def message_has_plain?(id)
-    @message_has_plain_query ||= db.prepare "SELECT 1 FROM message_part WHERE message_id = ? AND is_attachment = 0 AND type = 'text/plain' LIMIT 1"
+    @message_has_plain_query = db.prepare "SELECT 1 FROM message_part WHERE message_id = ? AND is_attachment = 0 AND type = 'text/plain' LIMIT 1"
     (!!@message_has_plain_query.execute(id).next) || message(id)["type"] == "text/plain"
   end
 
@@ -110,13 +110,13 @@ module MailCatcher::Mail extend self
   end
 
   def message_part(message_id, part_id)
-    @message_part_query ||= db.prepare "SELECT * FROM message_part WHERE message_id = ? AND id = ? LIMIT 1"
+    @message_part_query = db.prepare "SELECT * FROM message_part WHERE message_id = ? AND id = ? LIMIT 1"
     row = @message_part_query.execute(message_id, part_id).next
     row && Hash[row.fields.zip(row)]
   end
 
   def message_part_type(message_id, part_type)
-    @message_part_type_query ||= db.prepare "SELECT * FROM message_part WHERE message_id = ? AND type = ? AND is_attachment = 0 LIMIT 1"
+    @message_part_type_query = db.prepare "SELECT * FROM message_part WHERE message_id = ? AND type = ? AND is_attachment = 0 LIMIT 1"
     row = @message_part_type_query.execute(message_id, part_type).next
     row && Hash[row.fields.zip(row)]
   end
